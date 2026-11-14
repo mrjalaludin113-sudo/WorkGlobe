@@ -1,52 +1,76 @@
+
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      router.push("/");
+      router.refresh();
+    } catch {
+      setError("Login failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
-    <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: 20, background: "#f4f7fc", fontFamily: "Arial, sans-serif" }}>
-      <section style={{ width: "100%", maxWidth: 420, background: "white", padding: 32, borderRadius: 16, boxShadow: "0 10px 35px #14213d12" }}>
-        <Link href="/" style={{ fontSize: 25, fontWeight: 800, color: "#101d35", textDecoration: "none" }}>
-          Work<span style={{ color: "#2563eb" }}>Globe</span>
-        </Link>
+    <main className="auth-page">
+      <form className="auth-card" onSubmit={handleLogin}>
+        <h1>Welcome Back</h1>
+        <p>Sign in to your WorkGlobe account.</p>
 
-        <h1 style={{ marginTop: 30, color: "#101d35" }}>Welcome Back</h1>
-        <p style={{ color: "#68758b", margin: "10px 0 25px" }}>Sign in to your WorkGlobe account.</p>
+        <label>Email Address</label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
 
-        <form onSubmit={(e) => e.preventDefault()}>
-          <label>Email Address</label>
-          <input
-            type="email"
-            required
-            placeholder="Enter your email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={{ width: "100%", padding: 13, margin: "8px 0 18px", border: "1px solid #dce3ed", borderRadius: 8 }}
-          />
+        <label>Password</label>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
 
-          <label>Password</label>
-          <input
-            type="password"
-            required
-            placeholder="Enter your password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ width: "100%", padding: 13, margin: "8px 0 22px", border: "1px solid #dce3ed", borderRadius: 8 }}
-          />
+        {error && <p role="alert">{error}</p>}
 
-          <button type="submit" style={{ width: "100%", padding: 14, background: "#2563eb", color: "white", border: 0, borderRadius: 8, fontWeight: 700 }}>
-            Sign In
-          </button>
-        </form>
+        <button type="submit" disabled={loading}>
+          {loading ? "Signing in..." : "Sign In"}
+        </button>
 
-        <p style={{ marginTop: 22, textAlign: "center", color: "#68758b" }}>
-          Don't have an account? <Link href="/register" style={{ color: "#2563eb" }}>Create Account</Link>
+        <p>
+          New to WorkGlobe? <a href="/register">Create an account</a>
         </p>
-      </section>
+      </form>
     </main>
   );
 }
+
