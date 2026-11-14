@@ -19,8 +19,9 @@ export default function LoginPage() {
 
     try {
       const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
         password,
       });
 
@@ -29,10 +30,16 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/");
-      router.refresh();
-    } catch {
-      setError("Login failed. Please try again.");
+      if (data.user) {
+        router.push("/");
+        router.refresh();
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unexpected login error. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -44,23 +51,31 @@ export default function LoginPage() {
         <h1>Welcome Back</h1>
         <p>Sign in to your WorkGlobe account.</p>
 
-        <label>Email Address</label>
+        <label htmlFor="email">Email Address</label>
         <input
+          id="email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          autoComplete="email"
           required
         />
 
-        <label>Password</label>
+        <label htmlFor="password">Password</label>
         <input
+          id="password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          autoComplete="current-password"
           required
         />
 
-        {error && <p role="alert">{error}</p>}
+        {error && (
+          <p role="alert" style={{ color: "red" }}>
+            {error}
+          </p>
+        )}
 
         <button type="submit" disabled={loading}>
           {loading ? "Signing in..." : "Sign In"}
@@ -73,4 +88,3 @@ export default function LoginPage() {
     </main>
   );
 }
-
